@@ -30,6 +30,11 @@ _asryx_require_one_command() {
 }
 
 _asryx_require_audio_backend() {
+  if [[ "$(uname)" == "Darwin" ]]; then
+    _asryx_require_one_command "audio recorder" rec ffmpeg
+    return 0
+  fi
+
   if [[ -n "${XDG_RUNTIME_DIR:-}" && -S "${XDG_RUNTIME_DIR}/pipewire-0" ]]; then
     _asryx_require_command pw-record
     return 0
@@ -39,6 +44,10 @@ _asryx_require_audio_backend() {
 }
 
 _asryx_require_clipboard_backend() {
+  if [[ "$(uname)" == "Darwin" ]]; then
+    return 0
+  fi
+
   if [[ -n "${WAYLAND_DISPLAY:-}" ]]; then
     _asryx_require_command wl-copy
     return 0
@@ -81,7 +90,10 @@ _asryx_require_runtime_dependencies() {
 
   _asryx_require_audio_backend
   _asryx_require_clipboard_backend
-  _asryx_require_command notify-send
+
+  if [[ "$(uname)" != "Darwin" ]]; then
+    _asryx_require_command notify-send
+  fi
 
   _asryx_fail_if_missing_tools
 }

@@ -6,123 +6,31 @@ permissions:
 
 jobs:
   smoke:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - id: debian-trixie-c++20
-            image: debian:trixie
-          - id: fedora-latest-c++20
-            image: fedora:latest
-          - id: arch-latest-c++20
-            image: archlinux:latest
-
-    name: ${{ matrix.id }}
-    container:
-      image: ${{ matrix.image }}
+    runs-on: macos-latest
+    name: macos install/uninstall
 
     steps:
       - name: checkout
         uses: actions/checkout@v4
 
-      - name: install dependencies
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          if command -v apt-get >/dev/null 2>&1; then
-            export DEBIAN_FRONTEND=noninteractive
-            apt-get update
-            apt-get install -y --no-install-recommends \
-              sudo \
-              ca-certificates \
-              bash \
-              git \
-              curl \
-              cmake \
-              ninja-build \
-              g++ \
-              coreutils \
-              pipewire \
-              alsa-utils \
-              wl-clipboard \
-              xclip \
-              libnotify-bin
-            rm -rf /var/lib/apt/lists/*
-          elif command -v dnf >/dev/null 2>&1; then
-            dnf -y install \
-              sudo \
-              ca-certificates \
-              bash \
-              git \
-              curl \
-              cmake \
-              ninja-build \
-              gcc-c++ \
-              coreutils \
-              pipewire-utils \
-              alsa-utils \
-              wl-clipboard \
-              xclip \
-              libnotify
-          elif command -v pacman >/dev/null 2>&1; then
-            pacman -Sy --noconfirm
-            pacman -S --noconfirm --needed \
-              sudo \
-              ca-certificates \
-              bash \
-              git \
-              curl \
-              cmake \
-              ninja \
-              gcc \
-              coreutils \
-              pipewire \
-              alsa-utils \
-              wl-clipboard \
-              xclip \
-              libnotify
-          else
-            echo "no supported package manager found" >&2
-            exit 1
-          fi
-
-      - name: ci user
-        shell: bash
-        run: |
-          set -euo pipefail
-          useradd -m -s /bin/bash ci || true
-          echo 'ci ALL=(ALL) NOPASSWD:ALL' >/etc/sudoers.d/ci
-          chmod 0440 /etc/sudoers.d/ci
-          chown -R ci:ci "${GITHUB_WORKSPACE}"
+      - name: base runner
+        uses: ./.github/actions/base-runner
 
       - name: install
-        shell: bash
-        run: |
-          set -euo pipefail
-          sudo -u ci -H bash -lc "cd '${GITHUB_WORKSPACE}' && bash ./scripts/install"
+        run: bash ./scripts/install
 
       - name: verify install
-        shell: bash
         run: |
           set -euo pipefail
-          ci_home=$(getent passwd ci | cut -d: -f6)
-          asryx_bin="${ci_home}/.local/bin/asryx"
-
+          asryx_bin="${HOME}/.local/bin/asryx"
           test -x "${asryx_bin}"
           "${asryx_bin}" status | grep -qx 'idle'
           "${asryx_bin}" --model list >/dev/null
 
       - name: uninstall
-        shell: bash
-        run: |
-          set -euo pipefail
-          sudo -u ci -H bash -lc "cd '${GITHUB_WORKSPACE}' && bash ./scripts/uninstall"
+        run: bash ./scripts/uninstall
 
       - name: verify uninstall
-        shell: bash
         run: |
           set -euo pipefail
-          ci_home=$(getent passwd ci | cut -d: -f6)
-          test ! -e "${ci_home}/.local/bin/asryx"
+          test ! -e "${HOME}/.local/bin/asryx"

@@ -31,13 +31,24 @@ int main()
     std::filesystem::create_directories(runtime_path);
     std::filesystem::create_directories(bin_path);
 
+    const char* recorder_script =
+        "#!/bin/sh\n"
+        "for arg do wav=\"$arg\"; done\n"
+        ": > \"$wav\"\n"
+        "trap 'exit 0' INT TERM\n"
+        "while :; do sleep 1; done\n";
+
+#ifdef __APPLE__
+    {
+      std::ofstream recorder(bin_path / "rec");
+      recorder << recorder_script;
+    }
+    std::filesystem::permissions(bin_path / "rec", std::filesystem::perms::owner_exec,
+                                 std::filesystem::perm_options::add);
+#else
     {
       std::ofstream recorder(bin_path / "pw-record");
-      recorder << "#!/bin/sh\n"
-                  "for arg do wav=\"$arg\"; done\n"
-                  ": > \"$wav\"\n"
-                  "trap 'exit 0' INT TERM\n"
-                  "while :; do sleep 1; done\n";
+      recorder << recorder_script;
     }
     {
       std::ofstream clipboard(bin_path / "wl-copy");
@@ -53,8 +64,14 @@ int main()
                                  std::filesystem::perm_options::add);
     std::filesystem::permissions(bin_path / "notify-send", std::filesystem::perms::owner_exec,
                                  std::filesystem::perm_options::add);
+#endif
+
     setenv("HOME", home_path.c_str(), 1);
+#ifdef __APPLE__
+    setenv("TMPDIR", (runtime_path.string() + "/").c_str(), 1);
+#else
     setenv("XDG_RUNTIME_DIR", runtime_path.c_str(), 1);
+#endif
     const char* path_env = std::getenv("PATH");
     std::string old_path = path_env != nullptr ? path_env : "";
     std::string test_path = bin_path.string() + ":" + old_path;

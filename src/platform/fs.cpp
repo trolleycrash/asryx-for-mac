@@ -30,12 +30,19 @@ std::filesystem::path get_home_relative_path(const std::string& rel_path)
 
 std::filesystem::path get_runtime_directory()
 {
+#ifdef __APPLE__
+  const char* tmpdir = std::getenv("TMPDIR");
+  const std::string base = (tmpdir && *tmpdir != '\0') ? tmpdir : "/tmp";
+  return std::filesystem::path(base) /
+         (std::string(constants::runtime::dir_name) + "-" + std::to_string(getuid()));
+#else
   const char* xdg = std::getenv("XDG_RUNTIME_DIR");
   if (xdg && *xdg != '\0') {
     return std::filesystem::path(xdg) / std::string(constants::runtime::dir_name);
   }
   return std::filesystem::path(constants::runtime::fallback_tmp_root) /
          (std::string(constants::runtime::dir_name) + "-" + std::to_string(getuid()));
+#endif
 }
 
 bool is_owned_path(const std::filesystem::path& path)

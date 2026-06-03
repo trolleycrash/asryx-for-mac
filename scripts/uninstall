@@ -22,7 +22,10 @@ main() {
     "$(_asryx_runtime_fallback_dir)"
   )
 
-  if [[ -n "${XDG_RUNTIME_DIR:-}" ]]; then
+  if [[ "$(uname)" == "Darwin" ]]; then
+    local tmpdir="${TMPDIR:-/tmp}"
+    owned+=("${tmpdir%/}/${ASRYX_RUNTIME_DIR_NAME}-$(id -u)")
+  elif [[ -n "${XDG_RUNTIME_DIR:-}" ]]; then
     owned+=("${XDG_RUNTIME_DIR}/${ASRYX_RUNTIME_DIR_NAME}")
   fi
 

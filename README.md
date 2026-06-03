@@ -5,10 +5,10 @@
 <br/>
 
 <p align="center">
-  <a href="https://github.com/rccyx/asryx/actions"><img src="https://img.shields.io/github/actions/workflow/status/rccyx/asryx/ci.yml?style=for-the-badge&color=black&labelColor=111111&logo=githubactions&logoColor=white" alt="CI Status"/></a>
-  <a href="#installation"><img src="https://img.shields.io/badge/Platform-Linux-black?style=for-the-badge&color=black&labelColor=111111&logo=linux&logoColor=white" alt="Platform: Linux"/></a>
+  <a href="https://github.com/rccyx/asryx-for-mac/actions"><img src="https://img.shields.io/github/actions/workflow/status/rccyx/asryx-for-mac/ci.yml?style=for-the-badge&color=black&labelColor=111111&logo=githubactions&logoColor=white" alt="CI Status"/></a>
+  <a href="#installation"><img src="https://img.shields.io/badge/Platform-macOS-black?style=for-the-badge&color=black&labelColor=111111&logo=apple&logoColor=white" alt="Platform: macOS"/></a>
   <a href="#runtime-model"><img src="https://img.shields.io/badge/Offline-No_Cloud-black?style=for-the-badge&color=black&labelColor=111111" alt="Offline"/></a>
-  <a href="https://github.com/rccyx/asryx/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-Apache-black?style=for-the-badge&color=black&labelColor=111111&logo=apache&logoColor=white" alt="License"/></a>
+  <a href="https://github.com/rccyx/asryx-for-mac/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-Apache-black?style=for-the-badge&color=black&labelColor=111111&logo=apache&logoColor=white" alt="License"/></a>
 </p>
 
 </div>
@@ -21,9 +21,9 @@
 
 ## Overview
 
-asryx is a native C++ ASR binary for Linux. It builds locally against a pinned `whisper.cpp` source tree, records audio through the active Linux audio stack, runs recognition in-process, writes the transcript to the active clipboard backend, emits desktop notifications, and removes runtime artifacts after completion. Easily installed, and more easily removed.
+asryx is a native C++ ASR binary for macOS. It builds locally against a pinned `whisper.cpp` source tree, records audio through the default system input, runs recognition in-process, writes the transcript to the clipboard, emits a Notification Center notification, and removes runtime artifacts after completion. Easily installed, and more easily removed.
 
-Uses standard C++ and Linux dependencies, so it works with any Linux machine. Links against `whisper.cpp` as an embedded library through it's public C compatible API. There is no ASR server, hosted API, Python runtime, Node runtime, container layer, resident daemon, GUI process, dashboard, subscription, or network dependency during transcription.
+Uses standard C++ and macOS system tools, so it works on any Mac. Links against `whisper.cpp` as an embedded library through its public C compatible API. On Apple Silicon, inference runs on the GPU via Metal. There is no ASR server, hosted API, Python runtime, Node runtime, container layer, resident daemon, GUI process, dashboard, subscription, or network dependency during transcription.
 
 The program is basically a toggle, and a very simple [CLI](#cli).
 
@@ -37,9 +37,9 @@ The first invocation starts capture.
 asryx
 ```
 
-The next invocation stops capture, transcribes locally, copies the transcript, notifies the session, and cleans the runtime directory.
+The next invocation stops capture, transcribes locally, copies the transcript, notifies via Notification Center, and cleans the runtime directory.
 
-A compositor double-fire, key repeat, or repeated invocation during an active phase cannot create parallel recorders or corrupt the current transcription.
+A hotkey double-fire, key repeat, or repeated invocation during an active phase cannot create parallel recorders or corrupt the current transcription.
 
 **Runtime model:**
 
@@ -64,16 +64,16 @@ press again
   -> release lock
 ```
 
-Audio capture prefers PipeWire:
+Audio capture uses `rec` from sox:
 
 ```text
-pw-record
+rec
 ```
 
-ALSA is used as fallback:
+`ffmpeg` is used as fallback:
 
 ```text
-arecord
+ffmpeg -f avfoundation
 ```
 
 Captured audio is written as a temporary WAV file:
@@ -86,31 +86,22 @@ signed 16-bit
 
 The second invocation stops the recorder by signal, waits for the recorder process to exit, decodes the WAV into memory as float samples, runs local inference, trims the result, and writes it to the clipboard.
 
-Clipboard backends:
+Clipboard:
 
 ```text
-wl-copy                     # Wayland
-xclip -selection clipboard  # X11 fallback
+pbcopy
 ```
 
 Notifications:
 
 ```text
-notify-send
+osascript  # Notification Center — no daemon required
 ```
-
-Whenever the event is emmited, `notify-send` pipes it to Mako, Dunst, or any active desktop notification daemon to render it.
 
 **Runtime state:**
 
 ```text
-$XDG_RUNTIME_DIR/asryx
-```
-
-If `$XDG_RUNTIME_DIR` is unavailable, falls back to:
-
-```text
-/tmp/asryx-$UID
+$TMPDIR/asryx-$UID
 ```
 
 **Runtime files:**
@@ -128,8 +119,8 @@ After a completed transcription, runtime files are removed. The transcript survi
 ## Installation
 
 ```bash
-git clone https://github.com/rccyx/asryx
-cd asryx && bash ./scripts/install
+git clone https://github.com/rccyx/asryx-for-mac
+cd asryx-for-mac && bash ./scripts/install
 ```
 
 The installer validates the user environment, checks required tools, clones the pinned source, builds the binary locally, installs the executable, writes the version pin, writes the default config, installs the default model, selects it, and prints a PATH note when `~/.local/bin` is unavailable from the current shell.
@@ -173,11 +164,9 @@ transcribing
 ```
 
 > [!TIP]
-> This output can be used for status surfaces such as Waybar and Polybar.
+> This output can be used for status bar tools such as xbar and SwiftBar.
 
 ## Dependencies
-
-You probably have most of these already, but check.
 
 Build:
 
@@ -187,47 +176,41 @@ git
 curl
 cmake
 ninja
-g++ or clang++
+clang++ (Xcode Command Line Tools)
 ```
 
-Runtime depends on your machine. For audio, check what you have:
+Install build tools via Homebrew:
 
 ```bash
-which pw-record || which arecord
+brew install cmake ninja sox
 ```
 
-PipeWire systems have `pw-record`, ALSA systems have `arecord`. If you have neither, install `pipewire` or `alsa-utils` through your package manager.
+`sox` provides the `rec` command for audio capture. `pbcopy` and `osascript` are macOS built-ins — no extra packages needed for clipboard or notifications.
 
-For clipboard, it depends on your session. Hyprland, Sway, and any other Wayland compositor need `wl-clipboard`. X11 needs `xclip`. If you're not sure which you are on:
+Xcode Command Line Tools (provides `clang++`):
 
 ```bash
-echo "$XDG_SESSION_TYPE"
+xcode-select --install
 ```
-
-Desktop notifications require an active notification daemon such as Mako, Dunst, or the session's native notification service.
 
 ## Keybind
 
-The binary takes no arguments to toggle, so just bind it to a key in whatever compositor or DE you're on.
+The binary takes no arguments to toggle, so bind it to a key with any tool you prefer.
 
-Hyprland:
+**skhd** (recommended for terminal-centric setups):
 
-```ini
-bind = ALT, W, exec, asryx
+```
+alt - w : asryx
 ```
 
-Sway / i3:
+**Raycast**: Add a Script Command with the script body `asryx`.
 
-```ini
-bindsym $mod+w exec asryx
-```
+**Keyboard Maestro**: New macro → trigger Hot Key → action Execute Shell Script → `asryx`.
 
-GNOME: Settings > Keyboard > Custom Shortcuts, set command to `asryx`.
-
-KDE Plasma: System Settings > Shortcuts > Custom Shortcuts, set command to `asryx`.
+**System Settings** (no third-party tools): Settings → Keyboard → Keyboard Shortcuts → App Shortcuts — note this only works with menu items, so a wrapper app is needed for bare CLI invocation.
 
 > [!TIP]
-> A clipboard manager is highly recommended for long recordings. In case you copy something else by mistake after the transcription is emitted.
+> A clipboard manager is highly recommended for long recordings, in case you copy something else by mistake after the transcription is emitted.
 
 ## CLI
 
@@ -304,7 +287,7 @@ large
 | large-v3-turbo     | 1.5 GiB | ~2.3 GB | ~8x            |
 | large-v1 / v2 / v3 | 2.9 GiB | ~3.9 GB | 1x             |
 
-Speed is relative to large on CPU.
+Speed is relative to large on CPU. On Apple Silicon, Metal acceleration significantly reduces inference time across all models.
 
 `base.en` is the default. It starts quickly and covers the default English offline transcription path.
 
@@ -494,7 +477,7 @@ Removed paths:
 ~/.local/share/asryx
 ~/.cache/asryx
 ~/.asryx.conf
-$XDG_RUNTIME_DIR/asryx
+$TMPDIR/asryx-$UID
 ```
 
 ## License
