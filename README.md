@@ -5,10 +5,10 @@
 <br/>
 
 <p align="center">
-  <a href="https://github.com/rccyx/asryx-for-mac/actions"><img src="https://img.shields.io/github/actions/workflow/status/rccyx/asryx-for-mac/ci.yml?style=for-the-badge&color=black&labelColor=111111&logo=githubactions&logoColor=white" alt="CI Status"/></a>
+  <a href="https://github.com/trolleycrash/asryx-for-mac/actions"><img src="https://img.shields.io/github/actions/workflow/status/trolleycrash/asryx-for-mac/ci.yml?style=for-the-badge&color=black&labelColor=111111&logo=githubactions&logoColor=white" alt="CI Status"/></a>
   <a href="#installation"><img src="https://img.shields.io/badge/Platform-macOS-black?style=for-the-badge&color=black&labelColor=111111&logo=apple&logoColor=white" alt="Platform: macOS"/></a>
   <a href="#runtime-model"><img src="https://img.shields.io/badge/Offline-No_Cloud-black?style=for-the-badge&color=black&labelColor=111111" alt="Offline"/></a>
-  <a href="https://github.com/rccyx/asryx-for-mac/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-Apache-black?style=for-the-badge&color=black&labelColor=111111&logo=apache&logoColor=white" alt="License"/></a>
+  <a href="https://github.com/trolleycrash/asryx-for-mac/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-Apache-black?style=for-the-badge&color=black&labelColor=111111&logo=apache&logoColor=white" alt="License"/></a>
 </p>
 
 </div>
@@ -119,7 +119,7 @@ After a completed transcription, runtime files are removed. The transcript survi
 ## Installation
 
 ```bash
-git clone https://github.com/rccyx/asryx-for-mac
+git clone https://github.com/trolleycrash/asryx-for-mac
 cd asryx-for-mac && bash ./scripts/install
 ```
 
